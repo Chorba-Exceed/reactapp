@@ -1,42 +1,107 @@
-import React from 'react';
+import React, { useState } from 'react';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Checkbox from '@material-ui/core/Checkbox';
+import { IconButton } from '@material-ui/core';
+import DeleteIcon from '@material-ui/icons/Delete';
+import CreateIcon from '@material-ui/icons/Create';
+import DoneIcon from '@material-ui/icons/Done';
+import { IItem } from '../../utils/types';
 
 
-function Item(props: any) { // УБРАТЬ ANY
+type PropsItem = {
+  item: IItem,
+  updateItem(id: string, completed:boolean): void,
+  deleteItemById(id: string): void,
+  changeToDoById(id: string, description:string) :void
+};
+
+function Item(props: PropsItem) {
+  const { item } = props;
+  const [editMode, changeEditMode] = useState(false);
+  const [valueText, changeValueText] = useState(item.description);
+
   function markTodoDone() {
-    const { item } = props;
     props.updateItem(item._id, props.item.complete);
   }
+
   let textDecoration = 'none';
-  const { item } = props;
   if (item.complete) textDecoration = 'line-through';
 
   function deleteItem() {
     props.deleteItemById(props.item._id);
   }
 
+  function changeToDo() {
+    props.changeToDoById(props.item._id, valueText);
+    changeEditMode(!editMode);
+  }
+
+  function runEditMode() {
+    changeEditMode(!editMode);
+  }
+
+  function handleInputChange(e: React.FormEvent<HTMLInputElement>) {
+    e.preventDefault();
+    changeValueText(e.currentTarget.value);
+  }
   return (
     <div>
       <p>
-        <span
-          onClick={markTodoDone}
-          style={{ textDecorationLine: textDecoration, cursor: 'pointer' }}
-        >
-          {item.description}
-        </span>
-        <span
-          onClick={deleteItem}
-          style={{ cursor: 'pointer' }}
-        >
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/9/98/%D0%98%D0%BA%D0%BE%D0%BD%D0%BA%D0%B0_%D0%BA%D1%80%D0%B5%D1%81%D1%82%D0%B8%D0%BA%D0%B0_%28ei%29.svg"
-            width="15"
-            height="15"
-            alt="Delite Item"
-          />
-        </span>
+        <IconButton onClick={deleteItem}>
+          <DeleteIcon />
+        </IconButton>
+        {
+          editMode
+            ? (
+              <IconButton onClick={changeToDo}>
+                <DoneIcon />
+              </IconButton>
+            )
+            : (
+              <IconButton onClick={runEditMode}>
+                <CreateIcon />
+              </IconButton>
+            )
+        }
+        {
+          editMode
+            ? (
+              <input
+                type="text"
+                autoFocus
+                onChange={handleInputChange}
+                value={valueText}
+                placeholder={item.description}
+              />
+            )
+            : (
+              <FormControlLabel
+                control={(
+                  <Checkbox
+                    checked={item.complete}
+                    onChange={markTodoDone}
+                    value="checkedB"
+                    color="primary"
+                  />
+                      )}
+                style={{ textDecorationLine: textDecoration }}
+                label={item.description}
+              />
+            )
+        }
       </p>
     </div>
   );
 }
 
 export default Item;
+
+
+/*
++++ TODO: 1. Return token after registration and log in user
++++ TODO: 2  If status code = 403 (unauthorized)- redirect to login page
++++ TODO: 3. Add todo on Enter button
++++ TODO: 4 Add filters
++++ TODO: 4 Add Complete All function
+TODO: 5. Stylings(Errors hints around input form), show other errors on toasts
+ */

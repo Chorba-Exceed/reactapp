@@ -6,7 +6,7 @@ import {
   IItems,
   IAPIResponse,
   IRawStatusResponse,
-  IItemsGetResult, ILoginRequestResult,
+  IItemsGetResult, ILoginRequestResult, IAddItemResult, IItem,
 } from './types';
 
 export default class ApiRequests {
@@ -39,10 +39,9 @@ export default class ApiRequests {
       },
     });
     if (rawData.status === 200) {
-      const response = await rawData.json();
-      return { success: true, login: response.login };
+      return { success: true };
     }
-    return { success: false, login: '' };
+    return { success: false };
   }
 
   public async getToDoItems(): Promise<IItemsGetResult> {
@@ -60,16 +59,16 @@ export default class ApiRequests {
       const items = await rawData.json();
       return { success: true, items };
     }
-    return { success: false, items: [] };
+    return { success: false, items: [], statusCode: rawData.status };
   }
 
-  public async AddItem(description:string): Promise<IItemsGetResult> {
+  public async AddItem(description:string): Promise<IAddItemResult> {
     const requestUrl = `${this.baseUrl}/api/item/`;
     const reqBody = {
       description,
     };
     const token = `bearer ${localStorage.getItem('token')}`;
-    const rawData: IRawResponse<IItems> = await fetch(requestUrl, {
+    const rawData: IRawResponse<IItem> = await fetch(requestUrl, {
       method: 'POST',
       credentials: 'include',
       body: JSON.stringify(reqBody),
@@ -79,10 +78,10 @@ export default class ApiRequests {
       },
     });
     if (rawData.status === 200) {
-      const items = await rawData.json();
-      return { success: true, items };
+      const item = await rawData.json();
+      return { success: true, item };
     }
-    return { success: false, items: [] };
+    return { success: false };
   }
 
   public async UpdateItemByID(id: string, complete:boolean): Promise<IAPIResponse> {
@@ -102,6 +101,27 @@ export default class ApiRequests {
     });
     if (response.status === 200) {
       return { success: true, statusCode: response.status };
+    }
+    return { success: false, statusCode: response.status };
+  }
+
+  public async UpdateDescriptionItemByID(id: string, description:string): Promise<IAPIResponse> {
+    const requestUrl = `${this.baseUrl}/api/item/${id}`;
+    const reqBody = {
+      description,
+    };
+    const token = `bearer ${localStorage.getItem('token')}`;
+    const response: IRawStatusResponse = await fetch(requestUrl, {
+      method: 'PUT',
+      credentials: 'include',
+      body: JSON.stringify(reqBody),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token,
+      },
+    });
+    if (response.status === 200) {
+      return { success: true, statusCode: response.status, description };
     }
     return { success: false, statusCode: response.status };
   }

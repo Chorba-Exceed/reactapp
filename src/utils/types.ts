@@ -14,8 +14,7 @@ export interface ILoginRequestResult {
 }
 
 export interface IRegistration {
-  success: boolean,
-  login: string
+  success: boolean
 }
 
 export interface IRawResponse<T> {
@@ -34,19 +33,22 @@ export interface IItem {
   author:string
 }
 
-export interface IAddRequestResult {
-  success: boolean,
-  item: IItem
-}
 
 export interface IItems extends Array<IItem>{}
 
 export interface IItemsGetResult {
   success: boolean,
-  items: IItems
+  items: IItems,
+  statusCode?: number
+}
+
+export interface IAddItemResult {
+  success: boolean,
+  item?: IItem
 }
 
 export interface IAPIResponse {
   success: boolean,
-  statusCode: number
+  statusCode: number,
+  description?:string
 }

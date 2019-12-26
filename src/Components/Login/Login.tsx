@@ -2,6 +2,8 @@ import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
 
+import { TextField } from '@material-ui/core';
+import Button from '@material-ui/core/Button';
 import { IState } from './types';
 import ApiRequests from '../../utils/ApiRequests';
 
@@ -45,22 +47,30 @@ class Login extends React.Component<RouteComponentProps, IState> {
     return (
       <div>
         <form>
-          <input
+          <TextField
+            label="Enter your login"
             type="text"
-            name="login"
             value={login}
             onChange={this.onChangeLogin}
-            placeholder="Enter your login..."
+            variant="outlined"
           />
           <br />
-          <input
+          <br />
+          <TextField
+            label="Enter your Password"
             type="password"
-            name="password"
             value={password}
             onChange={this.onChangePassword}
-            placeholder="Enter your Password..."
+            variant="outlined"
           />
           <br />
+          <br />
+          <Button
+            variant="contained"
+            color="primary"
+          >
+            Sign in
+          </Button>
           <input
             type="submit"
             onClick={this.handleLogin}
