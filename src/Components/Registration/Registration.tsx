@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { SyntheticEvent } from 'react';
 import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
-import { IState } from './types';
+import { TextField } from '@material-ui/core';
+import Button from '@material-ui/core/Button';
+import Snackbar from '@material-ui/core/Snackbar';
+import IconButton from '@material-ui/core/IconButton';
+import CloseIcon from '@material-ui/icons/Close';
 import ApiRequests from '../../utils/ApiRequests';
+import { IState } from './types';
+import MySnackbarContentWrapper from '../Snackbar';
 
 type ValidationErrors = {
   field: string,
@@ -13,40 +19,64 @@ type ValidationResult = {
   errors: Array<ValidationErrors>
 };
 
-
 class Registration extends React.Component<RouteComponentProps, IState> {
   private readonly api = new ApiRequests();
 
   constructor(props: RouteComponentProps) {
     super(props);
-    this.state = { login: '', password: '', passwordReplay: '' };
+    this.state = {
+      login: { valid: true, value: '' },
+      password: { valid: true, value: '' },
+      passwordReplay: { valid: true, value: '' },
+      open: false,
+      snackMessage: '',
+      snackVariant: '',
+    };
     this.onChangeLogin = this.onChangeLogin.bind(this);
     this.onChangePassword = this.onChangePassword.bind(this);
     this.onChangePasswordReplay = this.onChangePasswordReplay.bind(this);
     this.handleRegistration = this.handleRegistration.bind(this);
+    this.handleClose = this.handleClose.bind(this);
   }
 
   onChangeLogin(event: React.ChangeEvent<HTMLInputElement>) {
-    this.setState({ login: event.target.value });
+    if (event.target.value === '') {
+      this.setState({ login: { value: '', valid: false } });
+    } else {
+      this.setState({ login: { value: event.target.value, valid: true } });
+    }
   }
 
   onChangePassword(event: React.ChangeEvent<HTMLInputElement>) {
-    this.setState({ password: event.target.value });
+    if (event.target.value.length < 6) {
+      this.setState({ password: { value: event.target.value, valid: false } });
+    } else {
+      this.setState({ password: { value: event.target.value, valid: true } });
+    }
   }
 
   onChangePasswordReplay(event: React.ChangeEvent<HTMLInputElement>) {
-    this.setState({ passwordReplay: event.target.value });
+    const { password } = this.state;
+    if (password.value === event.target.value) {
+      this.setState({ passwordReplay: { value: event.target.value, valid: true } });
+    } else {
+      this.setState({ passwordReplay: { value: event.target.value, valid: false } });
+    }
   }
 
-  async handleRegistration(event: React.FormEvent<HTMLInputElement>): Promise<void> {
+  async handleRegistration(event: React.MouseEvent<HTMLElement>): Promise<void> {
     event.preventDefault();
     const { login, password, passwordReplay } = this.state;
     const { history } = this.props;
     const validationResult = this.validatePassword();
     if (validationResult.isValid) {
-      const responseReg = await this.api.registrationRequest({ login, password, passwordReplay });
+      const responseReg = await this.api.registrationRequest({
+        login: login.value,
+        password: password.value,
+        passwordReplay: passwordReplay.value,
+      });
       if (responseReg.success) {
-        const loginInformation = { login, password };
+        const loginInformation = { login: login.value, password: password.value };
         const responseLogin = await this.api.authenticateRequest(loginInformation);
         if (responseLogin.success) {
           localStorage.setItem('token', responseLogin.token);
@@ -54,7 +84,10 @@ class Registration extends React.Component<RouteComponentProps, IState> {
         }
       }
     } else {
-      validationResult.errors.map((error) => alert(`${error.field}: ${error.error}`));
+      const err = validationResult.errors.map((error) => (` ${error.error}`));
+      this.setState({ snackVariant: 'error' });
+      this.setState({ snackMessage: err.toString() });
+      this.setState({ open: true });
     }
   }
 
@@ -63,58 +96,110 @@ class Registration extends React.Component<RouteComponentProps, IState> {
     const { login, password, passwordReplay } = this.state;
     if (!login) {
       validationResult.isValid = false;
-      validationResult.errors.push({ field: 'login', error: 'login can not be empty' });
+      validationResult.errors.push({ field: 'login', error: 'Login can not be empty' });
     }
-    if (!password) {
+    if (!password.value) {
       validationResult.isValid = false;
-      validationResult.errors.push({ field: 'password', error: 'password can not be empty' });
+      validationResult.errors.push({ field: 'password', error: 'Password can not be empty' });
     }
-    if (password.length < 6) {
+    if (password.value.length < 6) {
       validationResult.isValid = false;
-      validationResult.errors.push({ field: 'password', error: 'password length can be less than 6 characters' });
+      validationResult.errors.push({ field: 'password', error: 'Password length can be less than 6 characters' });
     }
-    if (!passwordReplay) {
+    if (!passwordReplay.value) {
       validationResult.isValid = false;
-      validationResult.errors.push({ field: 'passwordReplay', error: 'passwordReplay can not be empty' });
+      validationResult.errors.push({ field: 'passwordReplay', error: 'PasswordReplay can not be empty' });
     }
-    if (password !== passwordReplay) {
+    if (password.value !== passwordReplay.value) {
       validationResult.isValid = false;
-      validationResult.errors.push({ field: 'passwordReplay', error: 'passwordReplay must match password' });
+      validationResult.errors.push({ field: 'passwordReplay', error: 'PasswordReplay must match password' });
     }
     return validationResult;
+  }
+
+  handleClose(event?: SyntheticEvent, reason?: string) {
+    if (reason === 'clickaway') {
+      return;
+    }
+    this.setState({ open: false });
   }
 
   render(): React.ReactNode {
     const { login, password, passwordReplay } = this.state;
     return (
       <div>
+        <h1>Registration:</h1>
         <form>
-          <input
+          <TextField
+            error={!login.valid}
+            label="Enter your login"
             type="text"
-            name="login"
-            value={login}
+            value={login.value}
             onChange={this.onChangeLogin}
-            placeholder="Enter your login..."
+            variant="outlined"
           />
           <br />
-          <input
+          <br />
+          <TextField
+            error={!password.valid}
+            label="Enter your Password"
             type="password"
-            name="password"
-            value={password}
+            value={password.value}
             onChange={this.onChangePassword}
-            placeholder="Enter your Password..."
+            variant="outlined"
+            helperText={(password.valid ? '' : 'Password should be more 6 chars')}
           />
           <br />
-          <input
+          <br />
+          <TextField
+            error={!passwordReplay.valid}
+            label="Repeat your Password"
             type="password"
-            name="passwordReplay"
-            value={passwordReplay}
+            value={passwordReplay.value}
             onChange={this.onChangePasswordReplay}
-            placeholder="Repeat your Password..."
+            variant="outlined"
+            helperText={(passwordReplay.valid ? '' : 'Passwords not match')}
           />
           <br />
-          <input type="submit" onClick={this.handleRegistration} value="Sign up" />
+          <br />
+          <Button
+            type="submit"
+            variant="outlined"
+            color="primary"
+            onClick={this.handleRegistration}
+            disabled={!(login.valid && password.valid && passwordReplay.valid)}
+          >
+            Sign up
+          </Button>
         </form>
+        <Snackbar
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+          open={this.state.open}
+          autoHideDuration={10000}
+          onClose={this.handleClose}
+          ContentProps={{
+            'aria-describedby': 'message-id',
+          }}
+          action={[
+            <IconButton
+              key="close"
+              aria-label="close"
+              color="inherit"
+              onClick={this.handleClose}
+            >
+              <CloseIcon />
+            </IconButton>,
+          ]}
+        >
+          <MySnackbarContentWrapper
+            onClose={this.handleClose}
+            variant={this.state.snackVariant}
+            message={this.state.snackMessage}
+          />
+        </Snackbar>
       </div>
     );
   }

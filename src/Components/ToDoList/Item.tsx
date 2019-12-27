@@ -67,8 +67,8 @@ function Item(props: PropsItem) {
           editMode
             ? (
               <input
-                type="text"
                 autoFocus
+                type="text"
                 onChange={handleInputChange}
                 value={valueText}
                 placeholder={item.description}
@@ -103,5 +103,5 @@ export default Item;
 +++ TODO: 3. Add todo on Enter button
 +++ TODO: 4 Add filters
 +++ TODO: 4 Add Complete All function
-TODO: 5. Stylings(Errors hints around input form), show other errors on toasts
++++ TODO: 5. Stylings(Errors hints around input form), show other errors on toasts
  */

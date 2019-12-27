@@ -1,21 +1,33 @@
-import React from 'react';
+import React, { SyntheticEvent } from 'react';
 import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
 
 import { TextField } from '@material-ui/core';
 import Button from '@material-ui/core/Button';
-import { IState } from './types';
+import Snackbar from '@material-ui/core/Snackbar';
+import IconButton from '@material-ui/core/IconButton';
+import CloseIcon from '@material-ui/icons/Close';
 import ApiRequests from '../../utils/ApiRequests';
+import { IState } from './types';
+import MySnackbarContentWrapper from '../Snackbar';
 
 class Login extends React.Component<RouteComponentProps, IState> {
   private readonly api = new ApiRequests();
 
   constructor(props: RouteComponentProps) {
     super(props);
-    this.state = { login: '', password: '' };
+    this.state = {
+      login: '',
+      password: '',
+      open: false,
+      snackMessage: '',
+      snackVariant: '',
+    };
     this.onChangeLogin = this.onChangeLogin.bind(this);
     this.onChangePassword = this.onChangePassword.bind(this);
     this.handleLogin = this.handleLogin.bind(this);
+    this.handleRegistration = this.handleRegistration.bind(this);
+    this.handleClose = this.handleClose.bind(this);
   }
 
   onChangeLogin(event: React.ChangeEvent<HTMLInputElement>) {
@@ -26,7 +38,7 @@ class Login extends React.Component<RouteComponentProps, IState> {
     this.setState({ password: event.target.value });
   }
 
-  async handleLogin(event: React.FormEvent<HTMLInputElement>) {
+  async handleLogin(event: React.MouseEvent<HTMLElement>) {
     const { login, password } = this.state;
     const { history } = this.props;
     event.preventDefault();
@@ -34,18 +46,36 @@ class Login extends React.Component<RouteComponentProps, IState> {
       login,
       password,
     };
-
-    const response = await this.api.authenticateRequest(data);
-    if (response.success) {
-      localStorage.setItem('token', response.token);
-      history.push('/ToDoList');
+    if (login && password) {
+      const response = await this.api.authenticateRequest(data);
+      if (response.success) {
+        localStorage.setItem('token', response.token);
+        history.push('/ToDoList');
+      }
+    } else {
+      this.setState({ snackVariant: 'error' });
+      this.setState({ snackMessage: 'Enter your login and password' });
+      this.setState({ open: true });
     }
+  }
+
+  handleRegistration() {
+    const { history } = this.props;
+    history.push('/registration');
+  }
+
+  handleClose(event?: SyntheticEvent, reason?: string) {
+    if (reason === 'clickaway') {
+      return;
+    }
+    this.setState({ open: false });
   }
 
   render(): React.ReactNode {
     const { login, password } = this.state;
     return (
       <div>
+        <h1>ToDoList</h1>
         <form>
           <TextField
             label="Enter your login"
@@ -65,18 +95,53 @@ class Login extends React.Component<RouteComponentProps, IState> {
           />
           <br />
           <br />
-          <Button
-            variant="contained"
-            color="primary"
-          >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              onClick={this.handleLogin}
+            >
             Sign in
-          </Button>
-          <input
-            type="submit"
-            onClick={this.handleLogin}
-            value="Sign in"
-          />
+            </Button>
+          &#160;
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={this.handleRegistration}
+            >
+            Sign up
+            </Button>
+          </div>
         </form>
+        <Snackbar
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+          open={this.state.open}
+          autoHideDuration={10000}
+          onClose={this.handleClose}
+          ContentProps={{
+            'aria-describedby': 'message-id',
+          }}
+          action={[
+            <IconButton
+              key="close"
+              aria-label="close"
+              color="inherit"
+              onClick={this.handleClose}
+            >
+              <CloseIcon />
+            </IconButton>,
+          ]}
+        >
+          <MySnackbarContentWrapper
+            onClose={this.handleClose}
+            variant={this.state.snackVariant}
+            message={this.state.snackMessage}
+          />
+        </Snackbar>
       </div>
     );
   }
