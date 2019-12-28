@@ -195,15 +195,16 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
         openSnackBar: true,
       });
       const response = await this.api.UpdateDescriptionItemByID(id, description);
-
       if (!response.success) {
-        // history.push('/login');
         this.setState({
           items: oldItems,
           snackVariant: 'info',
-          snackMessage: '4547456454',
+          snackMessage: 'Error update',
           openSnackBar: true,
         });
+        if (response.statusCode === 401) {
+          setTimeout(() => (history.push('/login')), 1500);
+        }
       }
     }
   }
