@@ -13,10 +13,6 @@ export interface ILoginRequestResult {
   token: string
 }
 
-export interface IRegistration {
-  success: boolean
-}
-
 export interface IRawResponse<T> {
   status: number,
   json: () => Promise<T>

@@ -19,9 +19,9 @@ class Login extends React.Component<RouteComponentProps, IState> {
     this.state = {
       login: '',
       password: '',
-      open: false,
+      openSnackBar: false,
       snackMessage: '',
-      snackVariant: '',
+      snackVariant: 'success',
     };
     this.onChangeLogin = this.onChangeLogin.bind(this);
     this.onChangePassword = this.onChangePassword.bind(this);
@@ -51,11 +51,19 @@ class Login extends React.Component<RouteComponentProps, IState> {
       if (response.success) {
         localStorage.setItem('token', response.token);
         history.push('/ToDoList');
+      } else {
+        this.setState({
+          snackVariant: 'error',
+          snackMessage: 'Invalid login and password',
+          openSnackBar: true,
+        });
       }
     } else {
-      this.setState({ snackVariant: 'error' });
-      this.setState({ snackMessage: 'Enter your login and password' });
-      this.setState({ open: true });
+      this.setState({
+        snackVariant: 'error',
+        snackMessage: 'Enter your login and password',
+        openSnackBar: true,
+      });
     }
   }
 
@@ -68,7 +76,7 @@ class Login extends React.Component<RouteComponentProps, IState> {
     if (reason === 'clickaway') {
       return;
     }
-    this.setState({ open: false });
+    this.setState({ openSnackBar: false });
   }
 
   render(): React.ReactNode {
@@ -119,7 +127,7 @@ class Login extends React.Component<RouteComponentProps, IState> {
             vertical: 'bottom',
             horizontal: 'left',
           }}
-          open={this.state.open}
+          open={this.state.openSnackBar}
           autoHideDuration={10000}
           onClose={this.handleClose}
           ContentProps={{

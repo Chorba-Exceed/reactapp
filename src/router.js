@@ -9,6 +9,7 @@ import Grid from '@material-ui/core/Grid';
 import Login from './Components/Login/Login';
 import Registration from './Components/Registration/Registration';
 import ToDoList from './Components/ToDoList/ToDoList';
+import LogOut from './Components/Login/LogOut';
 
 export default (
   <Router>
@@ -30,6 +31,7 @@ export default (
           </Route>
         </Switch>
       </Grid>
+      <LogOut />
     </div>
   </Router>
 );

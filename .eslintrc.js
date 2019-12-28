@@ -6,6 +6,7 @@ module.exports =  {
         sourceType:  'module',  // Allows for the use of imports
     },
     rules: {
-        "no-underscore-dangle": 'off'
+        "no-underscore-dangle": 'off',
+        "no-param-reassign": 0
     },
 };

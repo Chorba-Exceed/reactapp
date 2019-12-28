@@ -24,10 +24,11 @@ interface ITodoListState {
   items: Array<IItem>,
   newItem: string,
   addToDo: string,
-  open: boolean,
+  openSnackBar: boolean,
   snackMessage: string,
   snackVariant: 'success' | 'warning' | 'info' | 'error',
-  filter: FiltersState
+  filter: FiltersState,
+  styleFilter: { backgroundColor: string, color: string },
 }
 
 class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { // УБРАТЬ ANY
@@ -39,10 +40,11 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
       items: [],
       newItem: '',
       addToDo: '',
-      open: false,
+      openSnackBar: false,
       snackMessage: '',
       snackVariant: 'info',
       filter: FiltersState.All,
+      styleFilter: { backgroundColor: '#3f51b5', color: 'white' },
     };
 
     this.updateItem = this.updateItem.bind(this);
@@ -66,26 +68,11 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
     }
   }
 
-
-  async handleFilterChange(filter: FiltersState) {
-    this.setState((prevState) => (
-      {
-        ...prevState,
-        filter,
-      }
-    ));
-  }
-
-
   onChangeAdd(event: React.ChangeEvent<HTMLInputElement>) {
-    this.setState({ newItem: event.target.value });
-    this.setState({ addToDo: event.target.value });
-  }
-
-  handEnterKey(key: any) {
-    if (key.charCode === 13) {
-      this.handAddToDo();
-    }
+    this.setState({
+      newItem: event.target.value,
+      addToDo: event.target.value,
+    });
   }
 
   async handAddToDo() {
@@ -94,19 +81,22 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
     if (newItem) {
       const apiResponse = await this.api.AddItem(newItem);
       if (apiResponse.success && apiResponse.item) {
-        this.setState({ items: [...items, apiResponse.item] });
-        this.setState({ newItem: '' });
-        this.setState({ addToDo: '' });
-        this.setState({ snackVariant: 'success' });
-        this.setState({ snackMessage: 'Task added' });
-        this.setState({ open: true });
-      } else {
-        history.push('/login');
+        return this.setState({
+          items: [...items, apiResponse.item],
+          newItem: '',
+          addToDo: '',
+          snackVariant: 'success',
+          snackMessage: 'Task added',
+          openSnackBar: true,
+        });
       }
+      history.push('/login');
     } else {
-      this.setState({ snackVariant: 'warning' });
-      this.setState({ snackMessage: 'Enter you ToDo' });
-      this.setState({ open: true });
+      this.setState({
+        snackVariant: 'warning',
+        snackMessage: 'Enter you ToDo',
+        openSnackBar: true,
+      });
     }
   }
 
@@ -116,17 +106,22 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
     const { items } = this.state;
     if (response.success) {
       const uncompletedItems = items.filter((item: IItem) => (!item.complete));
-      this.setState({ items: uncompletedItems });
-      this.setState({ snackVariant: 'warning' });
-      this.setState({ snackMessage: 'All completed items been deleted' });
-      this.setState({ open: true });
-    } else if (response.statusCode === 404) {
-      this.setState({ snackVariant: 'warning' });
-      this.setState({ snackMessage: 'Not completed items' });
-      this.setState({ open: true });
-    } else {
-      history.push('/login');
+      return this.setState({
+        items: uncompletedItems,
+        snackVariant: 'warning',
+        snackMessage: 'All completed items been deleted',
+        openSnackBar: true,
+      });
     }
+    if (response.statusCode === 404) {
+      return this.setState({
+        snackVariant: 'warning',
+        snackMessage: 'Not completed items',
+        openSnackBar: true,
+      });
+    }
+    history.push('/login');
+    return false;
   }
 
   handCompleteAllItems() {
@@ -139,10 +134,12 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
       }
       return item;
     });
-    this.setState({ items: newItems });
-    this.setState({ snackVariant: 'info' });
-    this.setState({ snackMessage: 'All items completed' });
-    this.setState({ open: true });
+    this.setState({
+      items: newItems,
+      snackVariant: 'info',
+      snackMessage: 'All items completed',
+      openSnackBar: true,
+    });
   }
 
   async updateItem(id: string, completed:boolean) {
@@ -154,10 +151,12 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
       const itemToUpdate = newItems.find((item: IItem) => item._id === id);
       if (itemToUpdate) {
         itemToUpdate.complete = !completed;
-        this.setState({ items: newItems });
-        this.setState({ snackVariant: 'info' });
-        this.setState({ snackMessage: 'Item update success' });
-        this.setState({ open: true });
+        this.setState({
+          items: newItems,
+          snackVariant: 'info',
+          snackMessage: 'Item update success',
+          openSnackBar: true,
+        });
       }
     } else {
       history.push('/login');
@@ -170,31 +169,42 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
     const { history } = this.props;
     if (response.success) {
       const delItem = items.filter((item: IItem) => (item._id !== id));
-      this.setState({ items: delItem });
-      this.setState({ snackVariant: 'info' });
-      this.setState({ snackMessage: 'Item has been deleted' });
-      this.setState({ open: true });
+      this.setState({
+        items: delItem,
+        snackVariant: 'info',
+        snackMessage: 'Item has been deleted',
+        openSnackBar: true,
+      });
     } else {
       history.push('/login');
     }
   }
 
   async changeToDoById(id:string, description:string) {
-    const response = await this.api.UpdateDescriptionItemByID(id, description);
     const { items } = this.state;
+    const oldItems = JSON.parse(JSON.stringify(items));
     const { history } = this.props;
-    if (response.success) {
-      const newItems = [...items];
-      const itemToUpdate = newItems.find((item: IItem) => item._id === id);
-      if (itemToUpdate) {
-        itemToUpdate.description = description;
-        this.setState({ items: newItems });
-        this.setState({ snackVariant: 'info' });
-        this.setState({ snackMessage: 'Item has been changed' });
-        this.setState({ open: true });
+    const newItems = [...items];
+    const itemToUpdate = newItems.find((item: IItem) => item._id === id);
+    if (itemToUpdate) {
+      itemToUpdate.description = description;
+      this.setState({
+        items: newItems,
+        snackVariant: 'info',
+        snackMessage: 'Item has been changed',
+        openSnackBar: true,
+      });
+      const response = await this.api.UpdateDescriptionItemByID(id, description);
+
+      if (!response.success) {
+        // history.push('/login');
+        this.setState({
+          items: oldItems,
+          snackVariant: 'info',
+          snackMessage: '4547456454',
+          openSnackBar: true,
+        });
       }
-    } else {
-      history.push('/login');
     }
   }
 
@@ -202,7 +212,7 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
     if (reason === 'clickaway') {
       return;
     }
-    this.setState({ open: false });
+    this.setState({ openSnackBar: false });
   }
 
   handleFilters = (items: IItems) => {
@@ -216,8 +226,32 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
     return items;
   };
 
+  handleFilterChange(filter: FiltersState) {
+    this.setState((prevState) => (
+      {
+        ...prevState,
+        filter,
+      }
+    ));
+  }
+
+  handEnterKey(key: React.KeyboardEvent<HTMLInputElement>) {
+    if (key.charCode === 13) {
+      this.handAddToDo();
+    }
+  }
+
+
   render() {
-    const { addToDo, items } = this.state;
+    const {
+      addToDo,
+      items,
+      styleFilter,
+      filter,
+      snackVariant,
+      snackMessage,
+      openSnackBar,
+    } = this.state;
     return (
       <div>
         <h1>ToDoList:</h1>
@@ -239,7 +273,7 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
         <br />
         <br />
         {
-          this.state.items.length > 0
+          items.length > 0
             ? (
               <ButtonGroup size="small" aria-label="small outlined button group">
                 <Button
@@ -268,7 +302,7 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
           ))}
         </div>
         {
-          this.state.items.length > 0
+          items.length > 0
             ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <ButtonGroup
@@ -276,16 +310,19 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
                   aria-label="small outlined button group"
                 >
                   <Button
+                    style={filter === FiltersState.All ? styleFilter : {}}
                     onClick={() => this.handleFilterChange(FiltersState.All)}
                   >
               All
                   </Button>
                   <Button
+                    style={filter === FiltersState.Active ? styleFilter : {}}
                     onClick={() => this.handleFilterChange(FiltersState.Active)}
                   >
               Active
                   </Button>
                   <Button
+                    style={filter === FiltersState.Completed ? styleFilter : {}}
                     onClick={() => this.handleFilterChange(FiltersState.Completed)}
                   >
               Completed
@@ -300,7 +337,7 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
             vertical: 'bottom',
             horizontal: 'left',
           }}
-          open={this.state.open}
+          open={openSnackBar}
           autoHideDuration={1000}
           onClose={this.handleClose}
           ContentProps={{
@@ -319,13 +356,12 @@ class ToDoList extends React.Component<RouteComponentProps, ITodoListState> { //
         >
           <MySnackbarContentWrapper
             onClose={this.handleClose}
-            variant={this.state.snackVariant}
-            message={this.state.snackMessage}
+            variant={snackVariant}
+            message={snackMessage}
           />
         </Snackbar>
       </div>
     );
   }
 }
-
 export default withRouter(ToDoList);

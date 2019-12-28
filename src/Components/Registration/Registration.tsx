@@ -28,7 +28,7 @@ class Registration extends React.Component<RouteComponentProps, IState> {
       login: { valid: true, value: '' },
       password: { valid: true, value: '' },
       passwordReplay: { valid: true, value: '' },
-      open: false,
+      openSnackBar: false,
       snackMessage: '',
       snackVariant: '',
     };
@@ -76,18 +76,16 @@ class Registration extends React.Component<RouteComponentProps, IState> {
         passwordReplay: passwordReplay.value,
       });
       if (responseReg.success) {
-        const loginInformation = { login: login.value, password: password.value };
-        const responseLogin = await this.api.authenticateRequest(loginInformation);
-        if (responseLogin.success) {
-          localStorage.setItem('token', responseLogin.token);
-          history.push('/ToDoList');
-        }
+        localStorage.setItem('token', responseReg.token);
+        history.push('/ToDoList');
       }
     } else {
       const err = validationResult.errors.map((error) => (` ${error.error}`));
-      this.setState({ snackVariant: 'error' });
-      this.setState({ snackMessage: err.toString() });
-      this.setState({ open: true });
+      this.setState({
+        snackVariant: 'error',
+        snackMessage: err.toString(),
+        openSnackBar: true,
+      });
     }
   }
 
@@ -121,11 +119,18 @@ class Registration extends React.Component<RouteComponentProps, IState> {
     if (reason === 'clickaway') {
       return;
     }
-    this.setState({ open: false });
+    this.setState({ openSnackBar: false });
   }
 
   render(): React.ReactNode {
-    const { login, password, passwordReplay } = this.state;
+    const {
+      login,
+      password,
+      passwordReplay,
+      snackVariant,
+      snackMessage,
+      openSnackBar,
+    } = this.state;
     return (
       <div>
         <h1>Registration:</h1>
@@ -177,7 +182,7 @@ class Registration extends React.Component<RouteComponentProps, IState> {
             vertical: 'bottom',
             horizontal: 'left',
           }}
-          open={this.state.open}
+          open={openSnackBar}
           autoHideDuration={10000}
           onClose={this.handleClose}
           ContentProps={{
@@ -196,13 +201,14 @@ class Registration extends React.Component<RouteComponentProps, IState> {
         >
           <MySnackbarContentWrapper
             onClose={this.handleClose}
-            variant={this.state.snackVariant}
-            message={this.state.snackMessage}
+            variant={snackVariant}
+            message={snackMessage}
           />
         </Snackbar>
       </div>
     );
   }
 }
+
 
 export default withRouter(Registration);

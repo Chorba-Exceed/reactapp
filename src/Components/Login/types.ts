@@ -1,7 +1,7 @@
 export interface IState {
   login: string,
   password: string,
-  open: boolean,
+  openSnackBar: boolean,
   snackMessage: string,
-  snackVariant: any
+  snackVariant: 'success' | 'warning' | 'info' | 'error',
 }

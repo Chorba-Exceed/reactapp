@@ -5,6 +5,7 @@ import { IconButton } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
 import CreateIcon from '@material-ui/icons/Create';
 import DoneIcon from '@material-ui/icons/Done';
+import TextField from '@material-ui/core/TextField';
 import { IItem } from '../../utils/types';
 
 
@@ -24,9 +25,6 @@ function Item(props: PropsItem) {
     props.updateItem(item._id, props.item.complete);
   }
 
-  let textDecoration = 'none';
-  if (item.complete) textDecoration = 'line-through';
-
   function deleteItem() {
     props.deleteItemById(props.item._id);
   }
@@ -40,68 +38,63 @@ function Item(props: PropsItem) {
     changeEditMode(!editMode);
   }
 
-  function handleInputChange(e: React.FormEvent<HTMLInputElement>) {
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     e.preventDefault();
     changeValueText(e.currentTarget.value);
   }
+  function handEnterKey(key: React.KeyboardEvent<HTMLInputElement>) {
+    if (key.charCode === 13) {
+      changeToDo();
+    }
+  }
   return (
-    <div>
-      <p>
-        <IconButton onClick={deleteItem}>
-          <DeleteIcon />
-        </IconButton>
+    <>
+      <p style={{ borderBottom: '1px solid' }}>
         {
           editMode
             ? (
-              <IconButton onClick={changeToDo}>
-                <DoneIcon />
-              </IconButton>
+              <>
+                <IconButton onClick={changeToDo}>
+                  <DoneIcon />
+                </IconButton>
+                <TextField
+                  autoFocus
+                  type="text"
+                  variant="outlined"
+                  value={valueText}
+                  onKeyPress={handEnterKey}
+                  onChange={handleInputChange}
+                  placeholder={item.description}
+                  size="small"
+                />
+              </>
             )
             : (
-              <IconButton onClick={runEditMode}>
-                <CreateIcon />
-              </IconButton>
-            )
-        }
-        {
-          editMode
-            ? (
-              <input
-                autoFocus
-                type="text"
-                onChange={handleInputChange}
-                value={valueText}
-                placeholder={item.description}
-              />
-            )
-            : (
-              <FormControlLabel
-                control={(
-                  <Checkbox
-                    checked={item.complete}
-                    onChange={markTodoDone}
-                    value="checkedB"
-                    color="primary"
-                  />
-                      )}
-                style={{ textDecorationLine: textDecoration }}
-                label={item.description}
-              />
+              <>
+                <IconButton onClick={deleteItem}>
+                  <DeleteIcon />
+                </IconButton>
+                <IconButton onClick={runEditMode}>
+                  <CreateIcon />
+                </IconButton>
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      checked={item.complete}
+                      onChange={markTodoDone}
+                      value="checkedB"
+                      color="primary"
+                    />
+                    )}
+                  style={{ textDecorationLine: item.complete ? 'line-through' : 'none' }}
+                  label={item.description}
+                />
+              </>
             )
         }
       </p>
-    </div>
+    </>
   );
 }
 
 export default Item;
-
-
-/*
-+++ TODO: 1. Return token after registration and log in user
-+++ TODO: 2  If status code = 403 (unauthorized)- redirect to login page
-+++ TODO: 3. Add todo on Enter button
-+++ TODO: 4 Add filters
-+++ TODO: 4 Add Complete All function
-+++ TODO: 5. Stylings(Errors hints around input form), show other errors on toasts
- */

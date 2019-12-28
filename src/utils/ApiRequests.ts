@@ -1,7 +1,6 @@
 import {
   ICreds,
   IRawResponse,
-  IRegistration,
   IToken,
   IItems,
   IAPIResponse,
@@ -29,9 +28,9 @@ export default class ApiRequests {
     return { success: false, token: '' };
   }
 
-  public async registrationRequest(creds: ICreds): Promise<IRegistration> {
+  public async registrationRequest(creds: ICreds): Promise<ILoginRequestResult> {
     const requestUrl = `${this.baseUrl}/register`;
-    const rawData: IRawResponse<IRegistration> = await fetch(requestUrl, {
+    const rawData: IRawResponse<IToken> = await fetch(requestUrl, {
       method: 'POST',
       body: JSON.stringify(creds),
       headers: {
@@ -39,9 +38,10 @@ export default class ApiRequests {
       },
     });
     if (rawData.status === 200) {
-      return { success: true };
+      const response = await rawData.json();
+      return { success: true, token: response.token };
     }
-    return { success: false };
+    return { success: false, token: '' };
   }
 
   public async getToDoItems(): Promise<IItemsGetResult> {
